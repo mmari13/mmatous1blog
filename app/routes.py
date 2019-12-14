@@ -8,12 +8,14 @@ from app.forms import RegistrationForm
 from app import db
 from datetime import datetime 
 from app.forms import PostForm
-from app.models import Post, User
+
 
 from app.forms import ResetPasswordRequestForm
 from app.email import send_password_reset_email
 
 from app.forms import ResetPasswordRequestForm
+
+from app.models import Post, User
 
 @app.before_request
 def before_request():
@@ -209,5 +211,25 @@ def delete_post(postid):
     
     return redirect(url_for('index'))
     
+@app.route("/edit/<postid>", methods=['GET', 'POST'])
+@login_required
+def edit_post(postid):
+    if current_user.is_authenticated:
+        post = Post.query.filter_by(id = postid).first()
+        form = PostForm()
+        if post and post.user_id == current_user.id:
+            if form.validate_on_submit(): 
+                post.body=form.post.data
+                db.session.commit()
+                return redirect(url_for('user',username = current_user.username))
+            else:
+                form.post.data = post.body
+                db.session.commit()
+                flash('Your changes have been saved.')
+                return render_template('edit_post.html', postid = postid, form =form)
+    flash("not allowed")
+    return redirect(url_for('user', username=current_user.username))
+
+
     
     
